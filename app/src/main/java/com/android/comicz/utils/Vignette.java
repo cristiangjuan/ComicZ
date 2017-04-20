@@ -109,35 +109,35 @@ public class Vignette {
     this.resolution = resolution;
   }
 
-  public int getxI() {
+  public int getXI() {
     return xI;
   }
 
-  public int getxF() {
+  public int getXF() {
     return xF;
   }
 
-  public int getyI() {
+  public int getYI() {
     return yI;
   }
 
-  public int getyF() {
+  public int getYF() {
     return yF;
   }
 
-  public int getxI2() {
+  public int getXI2() {
     return xI2;
   }
 
-  public int getxF2() {
+  public int getXF2() {
     return xF2;
   }
 
-  public int getyI2() {
+  public int getYI2() {
     return yI2;
   }
 
-  public int getyF2() {
+  public int getYF2() {
     return yF2;
   }
 
