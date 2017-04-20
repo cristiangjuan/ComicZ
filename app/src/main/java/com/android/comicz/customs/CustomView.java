@@ -13,7 +13,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
-import android.widget.ImageView;
 import com.android.comicz.activities.ScreenSlidePagerActivity;
 import com.android.comicz.activities.ZoomActivity;
 import com.android.comicz.utils.Constants;
@@ -21,30 +20,30 @@ import com.android.comicz.utils.Dimension;
 import com.android.comicz.utils.Page;
 import com.android.comicz.utils.Vignette;
 
-public class CustomView extends ImageView {
+public class CustomView extends android.support.v7.widget.AppCompatImageView {
 
 
-  private static int NONE = 0;
-  private static int DRAG = 1;
-  private static int ZOOM = 2;
+  private static final int NONE = 0;
+  private static final int DRAG = 1;
+  private static final int ZOOM = 2;
   private float newScaleFactor = 1.f;
   private float oldScaleFactor = 1.f;
   private Matrix matrix;
   private Matrix initialMatrix;
-  private PointF midPoint;
-  private PointF startPoint;
-  private PointF currentPan;
+  private final PointF midPoint;
+  private final PointF startPoint;
+  private final PointF currentPan;
   private float oldDist;
   private int mode;
   private boolean inZoom = false;
   /**
-   * N�mero de p�gina correspondiente a la vista.
+   * Número de página correspondiente a la vista.
    */
   private int pageNum = 0;
   /**
    * Gestor del evento doble tap.
    */
-  private GestureDetector gestureDetector;
+  private final GestureDetector gestureDetector;
 
 
   public CustomView(Context context) {
@@ -73,12 +72,11 @@ public class CustomView extends ImageView {
 
   /**
    * Asignamos la matriz al view, guardando sus valores para cuando haya que resetear
-   * a su posici�n inicial.
+   * a su posición inicial.
    */
   public void setInitialMatrix(Matrix mx) {
 
     initialMatrix = new Matrix(mx);
-    ;
     matrix = mx;
     oldDist = 1.f;
     oldScaleFactor = 1.f;
@@ -124,7 +122,7 @@ public class CustomView extends ImageView {
   /**
    * Recoge cualquier gesto excepto el doble tap
    */
-  public boolean myOnTouch(MotionEvent event) {
+  private boolean myOnTouch(MotionEvent event) {
 
     // Handle touch events here...
     switch (event.getAction() & MotionEvent.ACTION_MASK) {
@@ -181,11 +179,7 @@ public class CustomView extends ImageView {
             // Limitamos coeficiente del zoom.
             newScaleFactor = Math.max(1.f, Math.min(newScaleFactor, 4.0f));
 
-            if (newScaleFactor == 1.f) {
-              inZoom = false;
-            } else {
-              inZoom = true;
-            }
+            inZoom = newScaleFactor != 1.f;
 
             float width = this.getWidth();
             float height = this.getHeight();
@@ -214,7 +208,7 @@ public class CustomView extends ImageView {
   }
 
   /**
-   * Limitamos el pan y ajustamos el tama�o de la imagen a la ventana
+   * Limitamos el pan y ajustamos el tamaño de la imagen a la ventana
    */
   private void doPanAndZoom() {
 
@@ -267,8 +261,8 @@ public class CustomView extends ImageView {
    */
   private class GestureListener extends GestureDetector.SimpleOnGestureListener {
 
-    private CustomView view;
-    private Dimension screenResolution;
+    private final CustomView view;
+    private final Dimension screenResolution;
 
     public GestureListener(CustomView v) {
       super();
@@ -295,7 +289,7 @@ public class CustomView extends ImageView {
     @Override
     public boolean onDoubleTap(MotionEvent e) {
 
-      //Comprobamos si la imagen est� aumentada o no
+      //Comprobamos si la imagen está aumentada o no
       if (view.isInZoom()) {
 
         view.resetMatrix();
@@ -309,7 +303,7 @@ public class CustomView extends ImageView {
         Log.w("SZ", x + ", " + y);
 
         //int ratioConst = BitMapUtils.calculateRatioFromRes(getResources(), resId);
-        //Calcular resolucion del bitmap y hacer el mapeo entre las coordenadas de la vi�eta y las del tap
+        //Calcular resolucion del bitmap y hacer el mapeo entre las coordenadas de la viñeta y las del tap
         if (ScreenSlidePagerActivity.pages == null) {
           Log.w("Err", "Pages array static es null!!");
         }
@@ -331,12 +325,12 @@ public class CustomView extends ImageView {
             (float) pag.getResolution().getWidth() / (float) pag.getResolution().getHeight();
         Log.w("SZ", "ImageRatio " + imageRatio);
 
-        /**
-         * Comprobamos si nuestra referencia para la constante de relacion es el ancho o el alto.
-         * Desplazamos una de las coordenadas ya que la imagen habitualmente no cuadr� con la pantalla
-         * siempre sobrar� algo de ancho o de alto. Entonces consideraremos desplazaramos el valor 0 del
-         * alto o el ancho a el punto donde comienza el alto o el ancho de la imagen.
-         *
+        /*
+          Comprobamos si nuestra referencia para la constante de relacion es el ancho o el alto.
+          Desplazamos una de las coordenadas ya que la imagen habitualmente no cuadra con la pantalla
+          siempre sobrará algo de ancho o de alto. Entonces consideraremos desplazaramos el valor 0 del
+          alto o el ancho a el punto donde comienza el alto o el ancho de la imagen.
+
          */
         //Ancho
         int newWidthOrHeight;
@@ -359,15 +353,15 @@ public class CustomView extends ImageView {
         //Recuperar delimitaciones de vi�eta (x,y)
         Intent intent = new Intent(view.getContext(), ZoomActivity.class);
 
-        //Comprobamos que la p�gina actual se encuentra en la matriz que relaciona vi�etas con p�ginas
+        //Comprobamos que la página actual se encuentra en la matriz que relaciona viñetas con páginas
         if (pageNum < ScreenSlidePagerActivity.matrixPagVignette.length) {
-          //Recorrer vi�etas asociadas a p�gina
+          //Recorrer viñetas asociadas a página
           for (int i = 0; i < ScreenSlidePagerActivity.matrixPagVignette[pageNum].length; i++) {
 
             vig = ScreenSlidePagerActivity.mapaVignettes
                 .get(String.valueOf(ScreenSlidePagerActivity.matrixPagVignette[pageNum][i]));
             if (vig.insideVignnette(x, y, relationScreenImage)) {
-              Log.w("II", "Inside Vi�eta: " + x + ", " + y);
+              Log.w("II", "Inside Viñeta: " + x + ", " + y);
               intent.putExtra(Constants.EXTRA_VIGNETTE_NUM, vig.getSeq());
 
               ((Activity) view.getContext())
@@ -383,7 +377,7 @@ public class CustomView extends ImageView {
     }
   }
 
-  /**
+  /*
    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
 
