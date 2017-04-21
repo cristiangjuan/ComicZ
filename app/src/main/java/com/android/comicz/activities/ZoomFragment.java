@@ -95,7 +95,7 @@ public class ZoomFragment extends Fragment {
     @Override
     public boolean onDoubleTap(MotionEvent e) {
 
-      ((ZoomActivity) getActivity()).onBackPressed();
+      getActivity().onBackPressed();
 
       return true;
     }

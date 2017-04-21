@@ -91,8 +91,8 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
   };
 
   //private LruCache<String, Bitmap> mMemoryCache;
-  public static HashMap<String, Vignette> mapaVignettes = new HashMap<>();
-  public static HashMap<String, Page> mapaPages = new HashMap<>();
+  public static final HashMap<String, Vignette> mapaVignettes = new HashMap<>();
+  public static final HashMap<String, Page> mapaPages = new HashMap<>();
   /**
    * The pager widget, which handles animation and allows swiping horizontally to access previous
    * and next wizard steps.
@@ -147,9 +147,9 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
             }
         };
         */
-    /**
-     * Cargamos la resolución de las páginas y viñetas, las coordenadas de las viñetas
-     * y su relación con la página
+    /*
+      Cargamos la resolución de las páginas y viñetas, las coordenadas de las viñetas
+      y su relación con la página
      */
     loadPages();
     loadVignettes();
@@ -568,9 +568,9 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
 
   }
 
-  /**
-   * Añade una imagen a la memoria cache
-   * @param key
+  /*
+    Añade una imagen a la memoria cache
+    @param key
    * @param bitmap
    */
   /*

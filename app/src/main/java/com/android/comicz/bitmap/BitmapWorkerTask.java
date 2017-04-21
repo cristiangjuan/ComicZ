@@ -14,7 +14,7 @@ import java.lang.ref.WeakReference;
 public class BitmapWorkerTask extends AsyncTask<Integer, Void, Bitmap> {
 
   private final WeakReference<ImageView> imageViewReference;
-  private Resources resources;
+  private final Resources resources;
 
   public BitmapWorkerTask(CustomView imageView, Resources res) {
     // Use a WeakReference to ensure the ImageView can be garbage collected
@@ -26,9 +26,8 @@ public class BitmapWorkerTask extends AsyncTask<Integer, Void, Bitmap> {
   @Override
   protected Bitmap doInBackground(Integer... params) {
 
-    final Bitmap bitmap = BitMapUtils
+    return BitMapUtils
         .decodeSampledBitmapFromResource(resources, params[0], params[1], params[2]);
-    return bitmap;
   }
 
   // Once complete, see if ImageView is still around and set bitmap.
@@ -38,15 +37,14 @@ public class BitmapWorkerTask extends AsyncTask<Integer, Void, Bitmap> {
       final ImageView imageView = imageViewReference.get();
       if (imageView != null) {
 
-        //Insertamos el bitmap en el view. Se ajustar� al marco del view por los atributos del layout xml.
+        //Insertamos el bitmap en el view. Se ajustará al marco del view por los atributos del layout xml.
         imageView.setImageBitmap(bitmap);
 
-        //Obtenemos la matriz del view que ya tendr� los valores ajustados al marco del view.
-        Matrix mx = new Matrix();
-        mx = imageView.getImageMatrix();
+        //Obtenemos la matriz del view que ya tendrá los valores ajustados al marco del view.
+        Matrix mx = imageView.getImageMatrix();
         imageView.setScaleType(ImageView.ScaleType.MATRIX);
 
-        //Llamamos al m�todo de nuestra custom class.
+        //Llamamos al método de nuestra custom class.
         ((CustomView) imageView).setInitialMatrix(mx);
       }
     }

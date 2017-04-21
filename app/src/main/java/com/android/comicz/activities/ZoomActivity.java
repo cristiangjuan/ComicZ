@@ -82,8 +82,8 @@ public class ZoomActivity extends FragmentActivity {
    */
   private ViewPager mPager;
 
-  /**
-   * The pager adapter, which provides the pages to the view pager widget.
+  /*
+    The pager adapter, which provides the pages to the view pager widget.
    */
   // private ImagePagerAdapter mAdapter;
   /**
