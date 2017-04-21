@@ -26,20 +26,12 @@ public class CustomViewPager extends ViewPager {
   @Override
   public boolean onInterceptTouchEvent(MotionEvent ev) {
 
-    if (!isInZoom()) {
-      return super.onInterceptTouchEvent(ev);
-    }
-
-    return false;
+    return !isInZoom() && super.onInterceptTouchEvent(ev);
   }
 
   @Override
   public boolean onTouchEvent(MotionEvent ev) {
 
-    if (!isInZoom()) {
-      return super.onTouchEvent(ev);
-    }
-
-    return false;
+    return !isInZoom() && super.onTouchEvent(ev);
   }
 }
