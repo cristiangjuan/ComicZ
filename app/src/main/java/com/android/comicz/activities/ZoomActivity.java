@@ -12,11 +12,12 @@ import android.util.Log;
 import com.android.comicz.R;
 import com.android.comicz.bitmap.BitmapWorkerTask;
 import com.android.comicz.customs.CustomView;
+import com.android.comicz.utils.Constants;
 
 public class ZoomActivity extends FragmentActivity {
 
   /**
-   * Ids de los recursos de las vi�etas
+   * Ids de los recursos de las viñetas
    */
   public final static Integer[] imageResIds = new Integer[]{
       R.drawable.fables_01_02_cut_01, R.drawable.fables_01_02_cut_02,
@@ -93,7 +94,7 @@ public class ZoomActivity extends FragmentActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    Log.w("WW", "onCreate ZoomActivity");
+    Log.v(Constants.Log.METHOD, "ZoomActivity onCreate ");
     super.onCreate(savedInstanceState);
 
     //Ocultamos status bar
@@ -151,17 +152,17 @@ public class ZoomActivity extends FragmentActivity {
   }
 
   /**
-   * Carga una imagen en la p�gina. Primero la busca en cach�.
+   * Carga una imagen en la página. Primero la busca en caché.
    */
   public void loadBitmap(int resId, CustomView imageView, int screenWidth, int screenHeight) {
 
-    Log.w("WW", "loadBitmap ZoomActivity");
+    Log.v(Constants.Log.METHOD, "ZoomActivity loadBitmap ");
       /*
 	 	final String imageKey = String.valueOf(resId);
 
 	    final Bitmap bitmap = getBitmapFromMemCache(imageKey);
 	    if (bitmap != null) {
-	    	Log.i("II", "Cach�!!");
+	    	Log.i("II", "Caché!!");
 	    	imageView.setImageBitmap(bitmap);
 	    } else {
 	    	Log.i("II", "Not found in cache: "+imageKey);

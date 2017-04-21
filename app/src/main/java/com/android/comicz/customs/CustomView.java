@@ -130,7 +130,7 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
       case MotionEvent.ACTION_DOWN:
 
         mode = DRAG;
-        Log.d("Mode", "mode=DRAG");
+        Log.d(Constants.Log.TOUCH, "CustomView mode=DRAG");
         startPoint.set(event.getX(), event.getY());
 
         break;
@@ -144,13 +144,13 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
         if (oldDist > 10f) {
 
           mode = ZOOM;
-          Log.d("Mode", "mode=ZOOM");
+          Log.d(Constants.Log.TOUCH, "CustomView mode=ZOOM");
         }
         break;
       case MotionEvent.ACTION_UP:
       case MotionEvent.ACTION_POINTER_UP:
         mode = NONE;
-        Log.d("Mode", "mode=NONE");
+        Log.d(Constants.Log.TOUCH, "CustomView mode=NONE");
         break;
 
       case MotionEvent.ACTION_MOVE:
@@ -173,7 +173,7 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
             oldDist = newDist;
             oldScaleFactor = newScaleFactor;
             newScaleFactor *= scale;
-            Log.w("ScaleZoom",
+            Log.v(Constants.Log.SIZE,
                 "Pure Scale: " + newScaleFactor + "OldDist: " + oldDist + "NewDist: " + newDist);
 
             // Limitamos coeficiente del zoom.
@@ -228,12 +228,14 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
     float yOffset = (this.getHeight() - bmHeight * fitToWindow) * 0.5f * newScaleFactor;
 
     matrix.reset();
-    Log.w("ScaleZoom", "Scale: " + newScaleFactor + " Fit: " + fitToWindow + " Total: "
+    /*
+    Log.v("ScaleZoom", "Scale: " + newScaleFactor + " Fit: " + fitToWindow + " Total: "
         + newScaleFactor * fitToWindow);
-    Log.w("ScalePan",
+    Log.v("ScalePan",
         "PanX: " + currentPan.x + " XOffset: " + xOffset + " Total: " + (currentPan.x + xOffset));
-    Log.w("ScalePan",
+    Log.v("ScalePan",
         "PanY: " + currentPan.y + " XOffset: " + yOffset + " Total: " + (currentPan.y + yOffset));
+        */
     matrix.postScale(newScaleFactor * fitToWindow, newScaleFactor * fitToWindow);
     matrix.postTranslate(currentPan.x + xOffset, currentPan.y + yOffset);
 
@@ -270,7 +272,7 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
       view = v;
       DisplayMetrics metrics = new DisplayMetrics();
       ((Activity) view.getContext()).getWindowManager().getDefaultDisplay().getMetrics(metrics);
-      Log.w("SZ", "Screen: " + metrics.widthPixels + " x " + metrics.heightPixels);
+      Log.v(Constants.Log.SIZE, "CustomView Screen: " + metrics.widthPixels + " x " + metrics.heightPixels);
       screenResolution = new Dimension(metrics.widthPixels, metrics.heightPixels);
     }
     	
@@ -300,16 +302,16 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
 
         float x = e.getRawX();
         float y = e.getRawY();
-        Log.w("SZ", x + ", " + y);
+        Log.v(Constants.Log.SIZE, "CustomView - "+x + ", " + y);
 
         //int ratioConst = BitMapUtils.calculateRatioFromRes(getResources(), resId);
         //Calcular resolucion del bitmap y hacer el mapeo entre las coordenadas de la viñeta y las del tap
         if (ScreenSlidePagerActivity.pages == null) {
-          Log.w("Err", "Pages array static es null!!");
+          Log.e(Constants.Log.DEBUG, "CustomView - Pages array static es null!!");
         }
 
         if (ScreenSlidePagerActivity.mapaPages == null) {
-          Log.w("Err", "MapPages es null!!");
+          Log.e(Constants.Log.DEBUG, "CustomView - MapPages es null!!");
         }
         pag = ScreenSlidePagerActivity.mapaPages
             .get(String.valueOf(ScreenSlidePagerActivity.pages[pageNum]));
@@ -320,10 +322,10 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
         float screenRatio;
 
         screenRatio = (float) screenResolution.getWidth() / (float) screenResolution.getHeight();
-        Log.w("SZ", "ScreenRatio " + screenRatio);
+        Log.v(Constants.Log.SIZE, "CustomView - ScreenRatio " + screenRatio);
         imageRatio =
             (float) pag.getResolution().getWidth() / (float) pag.getResolution().getHeight();
-        Log.w("SZ", "ImageRatio " + imageRatio);
+        Log.v(Constants.Log.SIZE, "CustomView - ImageRatio " + imageRatio);
 
         /*
           Comprobamos si nuestra referencia para la constante de relacion es el ancho o el alto.
@@ -339,7 +341,7 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
               (float) screenResolution.getWidth() / (float) pag.getResolution().getWidth();
           newWidthOrHeight = (int) (pag.getResolution().getHeight() * relationScreenImage);
           y -= (screenResolution.getHeight() - newWidthOrHeight) / 2;
-          Log.w("SZ", "New Y, " + y);
+          Log.v(Constants.Log.SIZE, "CustomView - New Y, " + y);
         }
         //Alto
         else {
@@ -347,10 +349,10 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
               (float) screenResolution.getHeight() / (float) pag.getResolution().getHeight();
           newWidthOrHeight = (int) (pag.getResolution().getWidth() * relationScreenImage);
           x -= (screenResolution.getWidth() - newWidthOrHeight) / 2;
-          Log.w("SZ", "New X, " + x);
+          Log.v(Constants.Log.SIZE, "CustomView - New X, " + x);
         }
 
-        //Recuperar delimitaciones de vi�eta (x,y)
+        //Recuperar delimitaciones de viñeta (x,y)
         Intent intent = new Intent(view.getContext(), ZoomActivity.class);
 
         //Comprobamos que la página actual se encuentra en la matriz que relaciona viñetas con páginas
@@ -361,7 +363,7 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
             vig = ScreenSlidePagerActivity.mapaVignettes
                 .get(String.valueOf(ScreenSlidePagerActivity.matrixPagVignette[pageNum][i]));
             if (vig.insideVignnette(x, y, relationScreenImage)) {
-              Log.w("II", "Inside Viñeta: " + x + ", " + y);
+              Log.v(Constants.Log.SIZE, "CustomView - Inside Viñeta: " + x + ", " + y);
               intent.putExtra(Constants.EXTRA_VIGNETTE_NUM, vig.getSeq());
 
               ((Activity) view.getContext())

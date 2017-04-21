@@ -4,6 +4,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
+import com.android.comicz.utils.Constants;
 import com.android.comicz.utils.Dimension;
 
 public class BitMapUtils {
@@ -23,10 +24,10 @@ public class BitMapUtils {
 
     // Decode bitmap with inSampleSize set
     options.inJustDecodeBounds = false;
-    Log.w("SZ",
+    Log.v(Constants.Log.SIZE,
         "+" + options.outWidth + "," + options.outHeight + " - " + options.inSampleSize + resId);
     Bitmap b = BitmapFactory.decodeResource(res, resId, options);
-    Log.w("SZ",
+    Log.v(Constants.Log.SIZE,
         "-" + options.outWidth + "," + options.outHeight + " - " + options.inSampleSize + resId);
     return b;
   }
@@ -104,9 +105,9 @@ public class BitMapUtils {
     float constant;
 
     screenRatio = (float) screenResolution.getWidth() / (float) screenResolution.getHeight();
-    Log.w("SZ", "ScreenRatio " + screenRatio);
+    Log.v(Constants.Log.SIZE, "ScreenRatio " + screenRatio);
     imageRatio = (float) imageResolution.getWidth() / (float) imageResolution.getHeight();
-    Log.w("SZ", "ImageRatio " + imageRatio);
+    Log.v(Constants.Log.SIZE, "ImageRatio " + imageRatio);
 
     //Comprobamos si nuestra referencia para la constante de relación es el ancho o el alto
     //Ancho

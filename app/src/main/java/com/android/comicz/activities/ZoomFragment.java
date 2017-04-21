@@ -13,6 +13,7 @@ import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import com.android.comicz.R;
 import com.android.comicz.customs.CustomView;
+import com.android.comicz.utils.Constants;
 
 public class ZoomFragment extends Fragment {
 
@@ -27,7 +28,7 @@ public class ZoomFragment extends Fragment {
 
   static ZoomFragment newInstance(int imageNum) {
 
-    Log.w("WW", "newInstance ZoomFragment");
+    Log.v(Constants.Log.METHOD, "ZoomFragment newInstance ");
 
     final ZoomFragment f = new ZoomFragment();
     final Bundle args = new Bundle();
@@ -38,7 +39,7 @@ public class ZoomFragment extends Fragment {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
-    Log.w("WW", "OnCreate ZoomFragment");
+    Log.v(Constants.Log.METHOD, "ZoomFragment OnCreate ");
     super.onCreate(savedInstanceState);
     mImageNum = getArguments() != null ? getArguments().getInt(IMAGE_DATA_EXTRA) : -1;
   }
@@ -46,7 +47,7 @@ public class ZoomFragment extends Fragment {
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container,
       Bundle savedInstanceState) {
-    Log.w("WW", "OnCreateView ZoomFragment");
+    Log.v(Constants.Log.METHOD, "ZoomFragment OnCreateView ");
     // image_detail_fragment.xml contains just an ImageView
     final View v = inflater.inflate(R.layout.fragment_zoom_page, container, false);
     mImageView = (CustomView) v.findViewById(R.id.zoom_imageView);
@@ -55,7 +56,7 @@ public class ZoomFragment extends Fragment {
 
   @Override
   public void onActivityCreated(Bundle savedInstanceState) {
-    Log.w("WW", "OnActivityCreated ZoomFragment");
+    Log.v(Constants.Log.METHOD, "ZoomFragment OnActivityCreated ");
     super.onActivityCreated(savedInstanceState);
 
     if (ZoomActivity.class.isInstance(getActivity())) {

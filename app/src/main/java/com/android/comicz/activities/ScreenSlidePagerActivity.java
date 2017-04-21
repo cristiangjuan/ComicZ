@@ -12,6 +12,7 @@ import com.android.comicz.bitmap.BitmapWorkerTask;
 import com.android.comicz.customs.CustomPagerAdapter;
 import com.android.comicz.customs.CustomView;
 import com.android.comicz.customs.CustomViewPager;
+import com.android.comicz.utils.Constants;
 import com.android.comicz.utils.Page;
 import com.android.comicz.utils.Vignette;
 import java.util.HashMap;
@@ -105,7 +106,7 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    Log.w("WW", "OnCreate ScreenSlidePagerActivity");
+    Log.v(Constants.Log.METHOD, "ScreenSlidePagerActivity OnCreate");
     super.onCreate(savedInstanceState);
 
     //Ocultamos status bar
@@ -166,7 +167,7 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
    */
   private void loadPages() {
 
-    Log.w("WW", "loadPages ScreenSlidePagerActivity");
+    Log.v(Constants.Log.METHOD, "ScreenSlidePagerActivity loadPages");
     mapaPages.put("" + R.drawable.fables_01_01, new Page(
         BitMapUtils.getResolution(getResources(), R.drawable.fables_01_01)));
     mapaPages.put("" + R.drawable.fables_01_02, new Page(
@@ -222,7 +223,7 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
    * Carga las coordenadas de las viñetas
    */
   private void loadVignettes() {
-    Log.w("WW", "loadVignettes ScreenSlidePagerActivity");
+    Log.v(Constants.Log.METHOD, "ScreenSlidePagerActivity loadVignettes");
 
     int vigSeq = 0;
     int vigPag = 1;
@@ -608,7 +609,7 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
-    Log.w("WW", "onActivityResult ScreenSlidePagerActivity");
+    Log.v(Constants.Log.METHOD, "ScreenSlidePagerActivity onActivityResult ");
     Vignette v;
 
     v = mapaVignettes.get(String.valueOf(resultCode));
@@ -621,7 +622,7 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
    */
   public void loadBitmap(int resId, CustomView imageView, int screenWidth, int screenHeight) {
 
-    Log.w("WW", "loadBitMap ScreenSlidePagerActivity");
+    Log.v(Constants.Log.METHOD, "ScreenSlidePagerActivity loadBitMap ");
     	/*
 	 	final String imageKey = String.valueOf(resId);
 
