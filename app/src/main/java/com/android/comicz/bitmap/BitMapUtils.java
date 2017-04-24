@@ -97,27 +97,33 @@ public class BitMapUtils {
     return d;
   }
 
-  public static float calculateRelation(Dimension screenResolution,
+  public static float calculateScale(Dimension frameResolution,
       Dimension imageResolution) {
 
+    Log.v(Constants.Log.SIZE, "BitMapUtils - calculateScale");
+
     float imageRatio;
-    float screenRatio;
+    float frameRatio;
     float constant;
 
-    screenRatio = (float) screenResolution.getWidth() / (float) screenResolution.getHeight();
-    Log.v(Constants.Log.SIZE, "ScreenRatio " + screenRatio);
+    frameRatio = (float) frameResolution.getWidth() / (float) frameResolution.getHeight();
+    Log.v(Constants.Log.SIZE,"BitMapUtils - calculateScale - FrameDimensions = "
+        +frameResolution.getWidth()+", "+frameResolution.getHeight());
+    Log.v(Constants.Log.SIZE,"BitMapUtils - calculateScale - FrameRatio "+frameRatio);
     imageRatio = (float) imageResolution.getWidth() / (float) imageResolution.getHeight();
-    Log.v(Constants.Log.SIZE, "ImageRatio " + imageRatio);
+    Log.v(Constants.Log.SIZE,"BitMapUtils - calculateScale - ImageDimensions = "
+        +imageResolution.getWidth()+", "+imageResolution.getHeight());
+    Log.v(Constants.Log.SIZE,"BitMapUtils - calculateScale - ImageRatio "+imageRatio);
 
     //Comprobamos si nuestra referencia para la constante de relación es el ancho o el alto
     //Ancho
-    if (imageRatio > screenRatio) {
+    if (imageRatio > frameRatio) {
 
-      constant = (float) screenResolution.getWidth() / (float) imageResolution.getWidth();
+      constant = (float) frameResolution.getWidth() / (float) imageResolution.getWidth();
     }
     //Alto
     else {
-      constant = (float) screenResolution.getHeight() / (float) imageResolution.getHeight();
+      constant = (float) frameResolution.getHeight() / (float) imageResolution.getHeight();
     }
 
     return constant;

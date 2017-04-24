@@ -69,7 +69,8 @@ public class ScreenSlidePageFragment extends Fragment {
 
       DisplayMetrics metrics = new DisplayMetrics();
       getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-      Log.v(Constants.Log.SIZE, "Screen: " + metrics.widthPixels + " x " + metrics.heightPixels);
+      Log.v(Constants.Log.SIZE, "ScreenSlidePageFragment - Screen: "
+          + metrics.widthPixels + " x " + metrics.heightPixels);
 
       //Pasamos a la vista la página en la que se encuentra.
       mImageView.setPage(mImageNum);

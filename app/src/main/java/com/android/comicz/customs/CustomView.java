@@ -8,13 +8,21 @@ import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.AnimationUtils;
+import android.view.animation.PathInterpolator;
+import android.view.animation.ScaleAnimation;
+import android.view.animation.TranslateAnimation;
 import com.android.comicz.activities.ScreenSlidePagerActivity;
 import com.android.comicz.activities.ZoomActivity;
+import com.android.comicz.bitmap.BitMapUtils;
 import com.android.comicz.utils.Constants;
 import com.android.comicz.utils.Dimension;
 import com.android.comicz.utils.Page;
@@ -265,8 +273,9 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
 
     private final CustomView view;
     private final Dimension screenResolution;
+    private float lastScale;
 
-    public GestureListener(CustomView v) {
+    private GestureListener(CustomView v) {
       super();
 
       view = v;
@@ -291,41 +300,202 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
     @Override
     public boolean onDoubleTap(MotionEvent e) {
 
+      Log.v(Constants.Log.SIZE, "CustomView onDoubleTap");
+
       //Comprobamos si la imagen está aumentada o no
       if (view.isInZoom()) {
 
-        view.resetMatrix();
+        Log.v(Constants.Log.SIZE, "CustomView onDoubleTap - inZoom");
+        //view.resetMatrix();
+        resetAnimation();
       } else if (Constants.Options.ZOOM) {
-        Page pag;
-        Vignette vig;
-        float relationScreenImage;
+        Log.v(Constants.Log.SIZE, "CustomView onDoubleTap - notZoom");
 
-        float x = e.getRawX();
-        float y = e.getRawY();
-        Log.v(Constants.Log.SIZE, "CustomView - "+x + ", " + y);
+        //toZoomActivity(e);
+        zoomAnimation(e);
+      }
 
-        //int ratioConst = BitMapUtils.calculateRatioFromRes(getResources(), resId);
-        //Calcular resolucion del bitmap y hacer el mapeo entre las coordenadas de la viñeta y las del tap
-        if (ScreenSlidePagerActivity.pages == null) {
-          Log.e(Constants.Log.DEBUG, "CustomView - Pages array static es null!!");
+      return true;
+    }
+
+    private void resetAnimation() {
+
+      ScaleAnimation anim = new ScaleAnimation(lastScale, 1f, lastScale, 1f,
+          Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+      anim.setDuration(1000);
+      anim.setFillAfter(true);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+        anim.setInterpolator( AnimationUtils.loadInterpolator(
+            getContext(), android.R.interpolator.fast_out_slow_in));
+      }
+
+      CustomView.this.startAnimation(anim);
+      inZoom = false;
+    }
+
+    private void zoomAnimation(MotionEvent e) {
+
+      Log.v(Constants.Log.SIZE, "CustomView zoomAnimation");
+
+      Page pag;
+      Vignette vig;
+      float relationScreenImage;
+
+      float x = e.getRawX();
+      float y = e.getRawY();
+      Log.v(Constants.Log.SIZE, "CustomView - "+x + ", " + y);
+
+      //int ratioConst = BitMapUtils.calculateRatioFromRes(getResources(), resId);
+      //Calcular resolucion del bitmap y hacer el mapeo entre las coordenadas de la viñeta y las del tap
+      if (ScreenSlidePagerActivity.pages == null) {
+        Log.e(Constants.Log.DEBUG, "CustomView - Pages array static es null!!");
+      }
+
+      if (ScreenSlidePagerActivity.mapaPages == null) {
+        Log.e(Constants.Log.DEBUG, "CustomView - MapPages es null!!");
+      }
+      pag = ScreenSlidePagerActivity.mapaPages
+          .get(String.valueOf(ScreenSlidePagerActivity.pages[pageNum]));
+
+      //relationScreenImage = BitMapUtils.calculateScale(screenResolution, pag.getResolution());
+
+      float imageRatio;
+      float screenRatio;
+
+      screenRatio = (float) screenResolution.getWidth() / (float) screenResolution.getHeight();
+      Log.v(Constants.Log.SIZE, "CustomView - ScreenRatio " + screenRatio);
+      imageRatio =
+          (float) pag.getResolution().getWidth() / (float) pag.getResolution().getHeight();
+      Log.v(Constants.Log.SIZE, "CustomView - ImageRatio " + imageRatio);
+
+      /*
+        Comprobamos si nuestra referencia para la constante de relacion es el ancho o el alto.
+        Desplazamos una de las coordenadas ya que la imagen habitualmente no cuadra con la pantalla
+        siempre sobrará algo de ancho o de alto. Entonces consideraremos desplazaramos el valor 0 del
+        alto o el ancho a el punto donde comienza el alto o el ancho de la imagen.
+
+       */
+      //Ancho
+      int newWidthOrHeight;
+      if (imageRatio > screenRatio) {
+        relationScreenImage =
+            (float) screenResolution.getWidth() / (float) pag.getResolution().getWidth();
+        newWidthOrHeight = (int) (pag.getResolution().getHeight() * relationScreenImage);
+        y -= (screenResolution.getHeight() - newWidthOrHeight) / 2;
+        Log.v(Constants.Log.SIZE, "CustomView - New Y, " + y);
+      }
+      //Alto
+      else {
+        relationScreenImage =
+            (float) screenResolution.getHeight() / (float) pag.getResolution().getHeight();
+        newWidthOrHeight = (int) (pag.getResolution().getWidth() * relationScreenImage);
+        x -= (screenResolution.getWidth() - newWidthOrHeight) / 2;
+        Log.v(Constants.Log.SIZE, "CustomView - New X, " + x);
+      }
+
+      //Comprobamos que la página actual se encuentra en la matriz que relaciona viñetas con páginas
+      if (pageNum < ScreenSlidePagerActivity.matrixPagVignette.length) {
+        //Recorrer viñetas asociadas a página
+        for (int i = 0; i < ScreenSlidePagerActivity.matrixPagVignette[pageNum].length; i++) {
+
+          vig = ScreenSlidePagerActivity.mapaVignettes
+              .get(String.valueOf(ScreenSlidePagerActivity.matrixPagVignette[pageNum][i]));
+          if (vig.insideVignnette(x, y, relationScreenImage)) {
+            Log.v(Constants.Log.SIZE, "CustomView - Inside Viñeta: " + x + ", " + y);
+
+            float scale = BitMapUtils.calculateScale(pag.getResolution(), vig.getResolution());
+
+            //Guardamos la escala para restaurar.
+            lastScale = scale;
+
+            float originPointX =   (float) vig.getXI() / (float) pag.getResolution().getWidth();
+            float originPointY =  (float) vig.getYI() / (float) pag.getResolution().getHeight();
+
+            Log.d(Constants.Log.SIZE, "CustomView - Scale = "+scale);
+            //Log.d(Constants.Log.SIZE, "CustomView - originX = "+originPointX);
+            //Log.d(Constants.Log.SIZE, "CustomView - originY = "+originPointY);
+
+            int centerX = pag.getResolution().getWidth() / 2;
+            int centerY = pag.getResolution().getHeight() / 2;
+            int centerXVig = vig.getAbsolutCenter().x;
+            int centerYVig = vig.getAbsolutCenter().y;
+
+            Log.d(Constants.Log.SIZE, "CustomView - centerX = "+centerX);
+            Log.d(Constants.Log.SIZE, "CustomView - centerY = "+centerY);
+            Log.d(Constants.Log.SIZE, "CustomView - centerXVig = "+centerXVig);
+            Log.d(Constants.Log.SIZE, "CustomView - centerYVig = "+centerYVig);
+
+            AnimationSet anim = new AnimationSet(true);
+
+            TranslateAnimation translateAnimation = new TranslateAnimation(
+                0, centerX - centerXVig,
+                0, centerY - centerYVig);
+            translateAnimation.setDuration(1000);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+              translateAnimation.setInterpolator(AnimationUtils.loadInterpolator(
+                  getContext(), android.R.interpolator.fast_out_slow_in));
+            }
+
+            ScaleAnimation scaleAnimation = new ScaleAnimation(1f, scale, 1f, scale,
+                Animation.RELATIVE_TO_PARENT,
+                0.5f,
+                Animation.RELATIVE_TO_PARENT,
+                0.5f);
+            scaleAnimation.setDuration(1000);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+              scaleAnimation.setInterpolator((AnimationUtils.loadInterpolator(
+                  getContext(), android.R.interpolator.fast_out_slow_in)));
+            }
+
+            anim.addAnimation(translateAnimation);
+            anim.addAnimation(scaleAnimation);
+            anim.setFillAfter(true);
+
+            CustomView.this.startAnimation(anim);
+
+            inZoom = true;
+          }
         }
+      }
+    }
 
-        if (ScreenSlidePagerActivity.mapaPages == null) {
-          Log.e(Constants.Log.DEBUG, "CustomView - MapPages es null!!");
-        }
-        pag = ScreenSlidePagerActivity.mapaPages
-            .get(String.valueOf(ScreenSlidePagerActivity.pages[pageNum]));
+    private void toZoomActivity(MotionEvent e) {
 
-        //relationScreenImage = BitMapUtils.calculateRelation(screenResolution, pag.getResolution());
+      Log.v(Constants.Log.SIZE, "CustomView toZoomActivity");
 
-        float imageRatio;
-        float screenRatio;
+      Page pag;
+      Vignette vig;
+      float relationScreenImage;
 
-        screenRatio = (float) screenResolution.getWidth() / (float) screenResolution.getHeight();
-        Log.v(Constants.Log.SIZE, "CustomView - ScreenRatio " + screenRatio);
-        imageRatio =
-            (float) pag.getResolution().getWidth() / (float) pag.getResolution().getHeight();
-        Log.v(Constants.Log.SIZE, "CustomView - ImageRatio " + imageRatio);
+      float x = e.getRawX();
+      float y = e.getRawY();
+      Log.v(Constants.Log.SIZE, "CustomView - "+x + ", " + y);
+
+      //int ratioConst = BitMapUtils.calculateRatioFromRes(getResources(), resId);
+      //Calcular resolucion del bitmap y hacer el mapeo entre las coordenadas de la viñeta y las del tap
+      if (ScreenSlidePagerActivity.pages == null) {
+        Log.e(Constants.Log.DEBUG, "CustomView - Pages array static es null!!");
+      }
+
+      if (ScreenSlidePagerActivity.mapaPages == null) {
+        Log.e(Constants.Log.DEBUG, "CustomView - MapPages es null!!");
+      }
+      pag = ScreenSlidePagerActivity.mapaPages
+          .get(String.valueOf(ScreenSlidePagerActivity.pages[pageNum]));
+
+      //relationScreenImage = BitMapUtils.calculateScale(screenResolution, pag.getResolution());
+
+      float imageRatio;
+      float screenRatio;
+
+      screenRatio = (float) screenResolution.getWidth() / (float) screenResolution.getHeight();
+      Log.v(Constants.Log.SIZE, "CustomView - ScreenRatio " + screenRatio);
+      imageRatio =
+          (float) pag.getResolution().getWidth() / (float) pag.getResolution().getHeight();
+      Log.v(Constants.Log.SIZE, "CustomView - ImageRatio " + imageRatio);
 
         /*
           Comprobamos si nuestra referencia para la constante de relacion es el ancho o el alto.
@@ -334,50 +504,50 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
           alto o el ancho a el punto donde comienza el alto o el ancho de la imagen.
 
          */
-        //Ancho
-        int newWidthOrHeight;
-        if (imageRatio > screenRatio) {
-          relationScreenImage =
-              (float) screenResolution.getWidth() / (float) pag.getResolution().getWidth();
-          newWidthOrHeight = (int) (pag.getResolution().getHeight() * relationScreenImage);
-          y -= (screenResolution.getHeight() - newWidthOrHeight) / 2;
-          Log.v(Constants.Log.SIZE, "CustomView - New Y, " + y);
-        }
-        //Alto
-        else {
-          relationScreenImage =
-              (float) screenResolution.getHeight() / (float) pag.getResolution().getHeight();
-          newWidthOrHeight = (int) (pag.getResolution().getWidth() * relationScreenImage);
-          x -= (screenResolution.getWidth() - newWidthOrHeight) / 2;
-          Log.v(Constants.Log.SIZE, "CustomView - New X, " + x);
-        }
-
-        //Recuperar delimitaciones de viñeta (x,y)
-        Intent intent = new Intent(view.getContext(), ZoomActivity.class);
-
-        //Comprobamos que la página actual se encuentra en la matriz que relaciona viñetas con páginas
-        if (pageNum < ScreenSlidePagerActivity.matrixPagVignette.length) {
-          //Recorrer viñetas asociadas a página
-          for (int i = 0; i < ScreenSlidePagerActivity.matrixPagVignette[pageNum].length; i++) {
-
-            vig = ScreenSlidePagerActivity.mapaVignettes
-                .get(String.valueOf(ScreenSlidePagerActivity.matrixPagVignette[pageNum][i]));
-            if (vig.insideVignnette(x, y, relationScreenImage)) {
-              Log.v(Constants.Log.SIZE, "CustomView - Inside Viñeta: " + x + ", " + y);
-              intent.putExtra(Constants.EXTRA_VIGNETTE_NUM, vig.getSeq());
-
-              ((Activity) view.getContext())
-                  .startActivityForResult(intent, Constants.ZOOM_PAGE_REQUEST);
-              break;
-            }
-
-          }
-        }
+      //Ancho
+      int newWidthOrHeight;
+      if (imageRatio > screenRatio) {
+        relationScreenImage =
+            (float) screenResolution.getWidth() / (float) pag.getResolution().getWidth();
+        newWidthOrHeight = (int) (pag.getResolution().getHeight() * relationScreenImage);
+        y -= (screenResolution.getHeight() - newWidthOrHeight) / 2;
+        Log.v(Constants.Log.SIZE, "CustomView - New Y, " + y);
+      }
+      //Alto
+      else {
+        relationScreenImage =
+            (float) screenResolution.getHeight() / (float) pag.getResolution().getHeight();
+        newWidthOrHeight = (int) (pag.getResolution().getWidth() * relationScreenImage);
+        x -= (screenResolution.getWidth() - newWidthOrHeight) / 2;
+        Log.v(Constants.Log.SIZE, "CustomView - New X, " + x);
       }
 
-      return true;
+      //Recuperar delimitaciones de viñeta (x,y)
+      Intent intent = new Intent(view.getContext(), ZoomActivity.class);
+
+      //Comprobamos que la página actual se encuentra en la matriz que relaciona viñetas con páginas
+      if (pageNum < ScreenSlidePagerActivity.matrixPagVignette.length) {
+        //Recorrer viñetas asociadas a página
+        for (int i = 0; i < ScreenSlidePagerActivity.matrixPagVignette[pageNum].length; i++) {
+
+          vig = ScreenSlidePagerActivity.mapaVignettes
+              .get(String.valueOf(ScreenSlidePagerActivity.matrixPagVignette[pageNum][i]));
+          if (vig.insideVignnette(x, y, relationScreenImage)) {
+            Log.v(Constants.Log.SIZE, "CustomView - Inside Viñeta: " + x + ", " + y);
+            intent.putExtra(Constants.EXTRA_VIGNETTE_NUM, vig.getSeq());
+
+            ((Activity) view.getContext())
+                .startActivityForResult(intent, Constants.ZOOM_PAGE_REQUEST);
+            break;
+          }
+
+        }
+      }
     }
   }
+
+
+
 
   /*
    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {

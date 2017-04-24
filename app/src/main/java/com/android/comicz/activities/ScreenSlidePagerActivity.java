@@ -2,10 +2,14 @@ package com.android.comicz.activities;
 
 
 import android.app.ActionBar;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
+import android.view.View;
 import com.android.comicz.R;
 import com.android.comicz.bitmap.BitMapUtils;
 import com.android.comicz.bitmap.BitmapWorkerTask;
@@ -103,59 +107,55 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
    * The pager adapter, which provides the pages to the view pager widget.
    */
   private CustomPagerAdapter mAdapter;
+  /**
+   * Vista para gestionar los cambios de visibilidad de las barras de status y nav
+   */
+  private View mDecorView;
+  /**
+   * Contexto
+   */
+  private Context mContext;
+  /**
+   * Control de gesto para esconder barras de status y navegación.
+   */
+  private GestureDetector gestureDetector;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     Log.v(Constants.Log.METHOD, "ScreenSlidePagerActivity OnCreate");
+
     super.onCreate(savedInstanceState);
 
-    //Ocultamos status bar
-        /*
-        if (Build.VERSION.SDK_INT < 16) {
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        }
-        else {
-        	
-        	View decorView = getWindow().getDecorView();
-        	// Hide the status bar.
-        	int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
-        	decorView.setSystemUiVisibility(uiOptions);
-        }
-        */
+    mContext = this;
 
-    //Ocultamos ActionBar
-    ActionBar actionBar = getActionBar();
-    actionBar.hide();
+    setContentView(R.layout.activity_screen_slide_pager);
 
-    // Get max available VM memory, exceeding this amount will throw an
-    // OutOfMemory exception. Stored in kilobytes as LruCache takes an
-    // int in its constructor.
-        /*
-        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
-        Log.i("II", "Max Memory: "+ maxMemory);
-        
-        final int cacheSize = maxMemory / 4;
-        Log.i("II", "Cache size: "+ cacheSize);
+    //Inicializamos el detector de gestos
+    gestureDetector = new GestureDetector(mContext, new GestureListener());
 
-        mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
-            @Override
-            protected int sizeOf(String key, Bitmap bitmap) {
-                // The cache size will be measured in kilobytes rather than
-                // number of items.
-            	Log.i("II", "Size of Bitmap "+ key+ ": "+ bitmap.getByteCount() / 1024);
-                return bitmap.getByteCount() / 1024;
-            }
-        };
-        */
+    mDecorView = getWindow().getDecorView();
+
+    mDecorView.setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
+      @Override
+      public void onSystemUiVisibilityChange(int visibility) {
+
+        boolean visible = (mDecorView.getSystemUiVisibility()
+            & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0;
+
+        boolean visibleStatus = (mDecorView.getSystemUiVisibility()
+            & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0;
+
+        Log.w(Constants.Log.CONTROLS, "MainActivity - NavigationBar - " + visible);
+        Log.w(Constants.Log.CONTROLS, "MainActivity - StatusBar - " + visibleStatus);
+      }
+    });
+
     /*
       Cargamos la resolución de las páginas y viñetas, las coordenadas de las viñetas
       y su relación con la página
      */
     loadPages();
     loadVignettes();
-
-    setContentView(R.layout.activity_screen_slide_pager);
 
     mAdapter = new CustomPagerAdapter(getSupportFragmentManager(), pages.length);
     mPager = (CustomViewPager) findViewById(R.id.slide_pager);
@@ -642,4 +642,61 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
     task.execute(resId, screenWidth, screenHeight);
   }
 
+  /**
+   * Controlamos con el singletap esconder las barras de status y nav
+   *
+   * @author quayo
+   */
+  private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent e) {
+
+      boolean visible = (mDecorView.getSystemUiVisibility()
+          & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0;
+
+      if (visible) {
+
+        hideSystemUI();
+      }
+
+      return super.onSingleTapUp(e);
+    }
+  }
+
+  // This snippet hides the system bars.
+  private void hideSystemUI() {
+
+    Log.w(Constants.Log.METHOD, "ScreenSlidePagerActivity - hideSystemUI ");
+
+    // Set the IMMERSIVE flag.
+    // Set the content to appear under the system bars so that the content
+    // doesn't resize when the system bars hide and show.
+    getWindow().getDecorView().setSystemUiVisibility(
+        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
+            | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
+            | View.SYSTEM_UI_FLAG_IMMERSIVE);
+  }
+
+  /**
+   * Escondemos las barras de status y nav al coger foco
+   */
+  @Override
+  public void onWindowFocusChanged(boolean hasFocus) {
+    super.onWindowFocusChanged(hasFocus);
+
+    if (hasFocus) {
+
+      boolean visible = (mDecorView.getSystemUiVisibility()
+          & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0;
+
+      if (visible) {
+
+        hideSystemUI();
+      }
+    }
+  }
 }

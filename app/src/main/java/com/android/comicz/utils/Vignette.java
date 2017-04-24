@@ -1,5 +1,7 @@
 package com.android.comicz.utils;
 
+import android.graphics.Point;
+
 /**
  * Clase que representa una viñeta del comic
  */
@@ -60,7 +62,6 @@ public class Vignette {
     this.setResolution(res);
   }
 
-
   /**
    * Devuelve true si el punto está dentro de la viñeta
    */
@@ -103,6 +104,22 @@ public class Vignette {
 
   public Dimension getResolution() {
     return resolution;
+  }
+
+  public Point getAbsolutCenter() {
+
+    int width = xF - xI;
+    int height = yF - yI;
+
+    return new Point(xI+width/2, yI+height/2);
+  }
+
+  public Point getRelativeCenter() {
+
+    int width = xF - xI;
+    int height = yF - yI;
+
+    return new Point(width/2, height/2);
   }
 
   public void setResolution(Dimension resolution) {

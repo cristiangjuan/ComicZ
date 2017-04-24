@@ -7,7 +7,7 @@ public class Constants {
 
   public class Options {
 
-    public static final boolean ZOOM = false;
+    public static final boolean ZOOM = true;
 
   }
 
