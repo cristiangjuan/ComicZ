@@ -642,6 +642,14 @@ public class ScreenSlidePagerActivity extends FragmentActivity {
     task.execute(resId, screenWidth, screenHeight);
   }
 
+  @Override
+  public boolean onTouchEvent(MotionEvent event) {
+
+    gestureDetector.onTouchEvent(event);
+
+    return super.onTouchEvent(event);
+  }
+
   /**
    * Controlamos con el singletap esconder las barras de status y nav
    *

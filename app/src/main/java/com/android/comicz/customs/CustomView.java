@@ -6,25 +6,24 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.AnimationUtils;
-import android.view.animation.PathInterpolator;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
 import com.android.comicz.activities.ScreenSlidePagerActivity;
 import com.android.comicz.activities.ZoomActivity;
 import com.android.comicz.bitmap.BitMapUtils;
 import com.android.comicz.utils.Constants;
-import com.android.comicz.utils.Dimension;
 import com.android.comicz.utils.Page;
 import com.android.comicz.utils.Vignette;
 
@@ -272,31 +271,31 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
   private class GestureListener extends GestureDetector.SimpleOnGestureListener {
 
     private final CustomView view;
-    private final Dimension screenResolution;
-    private float lastScale;
+    private Point viewDimensions;
+    private float lastScaleVigPag;
+    private float lastTranslationX;
+    private float lastTranslationY;
+
 
     private GestureListener(CustomView v) {
       super();
 
       view = v;
-      DisplayMetrics metrics = new DisplayMetrics();
-      ((Activity) view.getContext()).getWindowManager().getDefaultDisplay().getMetrics(metrics);
-      Log.v(Constants.Log.SIZE, "CustomView Screen: " + metrics.widthPixels + " x " + metrics.heightPixels);
-      screenResolution = new Dimension(metrics.widthPixels, metrics.heightPixels);
-    }
-    	
-    	/*
-		@Override
-        public boolean onDown(MotionEvent e) {
-			
-			if (view.getScaleDetector().isInProgress()) 
-				return false;
-			else return true;
+
+      view.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+        @Override
+        public void onLayoutChange(View view, int i, int i1, int i2, int i3, int i4, int i5, int i6,
+            int i7) {
+
+          view.removeOnLayoutChangeListener(this);
+
+          viewDimensions = new Point(view.getMeasuredWidth(), view.getMeasuredHeight());
+          Log.v(Constants.Log.SIZE, "CustomView ViewDimen - "+
+              view.getMeasuredWidth() + ", " + view.getMeasuredHeight());
         }
-        */
+      });
+    }
 
-
-    // event when double tap occurs
     @Override
     public boolean onDoubleTap(MotionEvent e) {
 
@@ -320,17 +319,36 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
 
     private void resetAnimation() {
 
-      ScaleAnimation anim = new ScaleAnimation(lastScale, 1f, lastScale, 1f,
-          Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-      anim.setDuration(1000);
-      anim.setFillAfter(true);
+      AnimationSet anim = new AnimationSet(true);
+
+      TranslateAnimation translateAnimation = new TranslateAnimation(
+          lastTranslationX, 0,
+          lastTranslationY, 0);
+      translateAnimation.setDuration(1000);
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
-        anim.setInterpolator( AnimationUtils.loadInterpolator(
+        translateAnimation.setInterpolator(AnimationUtils.loadInterpolator(
             getContext(), android.R.interpolator.fast_out_slow_in));
       }
 
+      ScaleAnimation scaleAnimation = new ScaleAnimation(lastScaleVigPag, 1f, lastScaleVigPag, 1f,
+          Animation.RELATIVE_TO_PARENT,
+          0.5f,
+          Animation.RELATIVE_TO_PARENT,
+          0.5f);
+      scaleAnimation.setDuration(1000);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+        scaleAnimation.setInterpolator((AnimationUtils.loadInterpolator(
+            getContext(), android.R.interpolator.fast_out_slow_in)));
+      }
+
+      anim.addAnimation(translateAnimation);
+      anim.addAnimation(scaleAnimation);
+      anim.setFillAfter(true);
+
       CustomView.this.startAnimation(anim);
+
       inZoom = false;
     }
 
@@ -340,7 +358,7 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
 
       Page pag;
       Vignette vig;
-      float relationScreenImage;
+      float ratioViewImage;
 
       float x = e.getRawX();
       float y = e.getRawY();
@@ -358,13 +376,13 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
       pag = ScreenSlidePagerActivity.mapaPages
           .get(String.valueOf(ScreenSlidePagerActivity.pages[pageNum]));
 
-      //relationScreenImage = BitMapUtils.calculateScale(screenResolution, pag.getResolution());
+      //ratioViewImage = BitMapUtils.calculateScale(viewDimensions, pag.getResolution());
 
       float imageRatio;
-      float screenRatio;
+      float viewRatio;
 
-      screenRatio = (float) screenResolution.getWidth() / (float) screenResolution.getHeight();
-      Log.v(Constants.Log.SIZE, "CustomView - ScreenRatio " + screenRatio);
+      viewRatio = (float) viewDimensions.x /  (float) viewDimensions.y;
+      Log.v(Constants.Log.SIZE, "CustomView - ViewRatio " + viewRatio);
       imageRatio =
           (float) pag.getResolution().getWidth() / (float) pag.getResolution().getHeight();
       Log.v(Constants.Log.SIZE, "CustomView - ImageRatio " + imageRatio);
@@ -378,21 +396,22 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
        */
       //Ancho
       int newWidthOrHeight;
-      if (imageRatio > screenRatio) {
-        relationScreenImage =
-            (float) screenResolution.getWidth() / (float) pag.getResolution().getWidth();
-        newWidthOrHeight = (int) (pag.getResolution().getHeight() * relationScreenImage);
-        y -= (screenResolution.getHeight() - newWidthOrHeight) / 2;
+      if (imageRatio > viewRatio) {
+        ratioViewImage =
+            (float) viewDimensions.x / (float) pag.getResolution().getWidth();
+        newWidthOrHeight = (int) (pag.getResolution().getHeight() * ratioViewImage);
+        y -= (viewDimensions.y - newWidthOrHeight) / 2;
         Log.v(Constants.Log.SIZE, "CustomView - New Y, " + y);
       }
       //Alto
       else {
-        relationScreenImage =
-            (float) screenResolution.getHeight() / (float) pag.getResolution().getHeight();
-        newWidthOrHeight = (int) (pag.getResolution().getWidth() * relationScreenImage);
-        x -= (screenResolution.getWidth() - newWidthOrHeight) / 2;
+        ratioViewImage =
+            (float) viewDimensions.y / (float) pag.getResolution().getHeight();
+        newWidthOrHeight = (int) (pag.getResolution().getWidth() * ratioViewImage);
+        x -= (viewDimensions.x - newWidthOrHeight) / 2;
         Log.v(Constants.Log.SIZE, "CustomView - New X, " + x);
       }
+      Log.v(Constants.Log.SIZE, "CustomView - RatioViewImage, " + ratioViewImage);
 
       //Comprobamos que la página actual se encuentra en la matriz que relaciona viñetas con páginas
       if (pageNum < ScreenSlidePagerActivity.matrixPagVignette.length) {
@@ -401,25 +420,23 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
 
           vig = ScreenSlidePagerActivity.mapaVignettes
               .get(String.valueOf(ScreenSlidePagerActivity.matrixPagVignette[pageNum][i]));
-          if (vig.insideVignnette(x, y, relationScreenImage)) {
+          if (vig.insideVignnette(x, y, ratioViewImage)) {
             Log.v(Constants.Log.SIZE, "CustomView - Inside Viñeta: " + x + ", " + y);
 
-            float scale = BitMapUtils.calculateScale(pag.getResolution(), vig.getResolution());
+            float scaleVigPag = BitMapUtils.calculateScale(pag.getResolution(), vig.getResolution());
 
             //Guardamos la escala para restaurar.
-            lastScale = scale;
+            lastScaleVigPag = scaleVigPag;
 
-            float originPointX =   (float) vig.getXI() / (float) pag.getResolution().getWidth();
-            float originPointY =  (float) vig.getYI() / (float) pag.getResolution().getHeight();
-
-            Log.d(Constants.Log.SIZE, "CustomView - Scale = "+scale);
-            //Log.d(Constants.Log.SIZE, "CustomView - originX = "+originPointX);
-            //Log.d(Constants.Log.SIZE, "CustomView - originY = "+originPointY);
+            Log.d(Constants.Log.SIZE, "CustomView - ScaleVigPag = "+scaleVigPag);
 
             int centerX = pag.getResolution().getWidth() / 2;
             int centerY = pag.getResolution().getHeight() / 2;
             int centerXVig = vig.getAbsolutCenter().x;
             int centerYVig = vig.getAbsolutCenter().y;
+
+            lastTranslationX = (centerX - centerXVig) * ratioViewImage;
+            lastTranslationY = (centerY - centerYVig) * ratioViewImage;
 
             Log.d(Constants.Log.SIZE, "CustomView - centerX = "+centerX);
             Log.d(Constants.Log.SIZE, "CustomView - centerY = "+centerY);
@@ -429,8 +446,8 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
             AnimationSet anim = new AnimationSet(true);
 
             TranslateAnimation translateAnimation = new TranslateAnimation(
-                0, centerX - centerXVig,
-                0, centerY - centerYVig);
+                0, lastTranslationX,
+                0, lastTranslationY);
             translateAnimation.setDuration(1000);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 
@@ -438,7 +455,7 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
                   getContext(), android.R.interpolator.fast_out_slow_in));
             }
 
-            ScaleAnimation scaleAnimation = new ScaleAnimation(1f, scale, 1f, scale,
+            ScaleAnimation scaleAnimation = new ScaleAnimation(1f, scaleVigPag, 1f, scaleVigPag,
                 Animation.RELATIVE_TO_PARENT,
                 0.5f,
                 Animation.RELATIVE_TO_PARENT,
@@ -486,12 +503,12 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
       pag = ScreenSlidePagerActivity.mapaPages
           .get(String.valueOf(ScreenSlidePagerActivity.pages[pageNum]));
 
-      //relationScreenImage = BitMapUtils.calculateScale(screenResolution, pag.getResolution());
+      //relationScreenImage = BitMapUtils.calculateScale(viewDimensions, pag.getResolution());
 
       float imageRatio;
       float screenRatio;
 
-      screenRatio = (float) screenResolution.getWidth() / (float) screenResolution.getHeight();
+      screenRatio = (float) viewDimensions.x / (float) viewDimensions.y;
       Log.v(Constants.Log.SIZE, "CustomView - ScreenRatio " + screenRatio);
       imageRatio =
           (float) pag.getResolution().getWidth() / (float) pag.getResolution().getHeight();
@@ -508,17 +525,17 @@ public class CustomView extends android.support.v7.widget.AppCompatImageView {
       int newWidthOrHeight;
       if (imageRatio > screenRatio) {
         relationScreenImage =
-            (float) screenResolution.getWidth() / (float) pag.getResolution().getWidth();
+            (float) viewDimensions.x / (float) pag.getResolution().getWidth();
         newWidthOrHeight = (int) (pag.getResolution().getHeight() * relationScreenImage);
-        y -= (screenResolution.getHeight() - newWidthOrHeight) / 2;
+        y -= (viewDimensions.y - newWidthOrHeight) / 2;
         Log.v(Constants.Log.SIZE, "CustomView - New Y, " + y);
       }
       //Alto
       else {
         relationScreenImage =
-            (float) screenResolution.getHeight() / (float) pag.getResolution().getHeight();
+            (float) viewDimensions.y / (float) pag.getResolution().getHeight();
         newWidthOrHeight = (int) (pag.getResolution().getWidth() * relationScreenImage);
-        x -= (screenResolution.getWidth() - newWidthOrHeight) / 2;
+        x -= (viewDimensions.x - newWidthOrHeight) / 2;
         Log.v(Constants.Log.SIZE, "CustomView - New X, " + x);
       }
 
